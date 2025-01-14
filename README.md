@@ -7,6 +7,108 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+# Invoice App
+
+This is a Laravel-based invoice application. The project is set up to run using Docker Compose.
+
+## Prerequisites
+
+- Docker
+- Docker Compose
+
+## Getting Started
+
+Follow these steps to get the project up and running:
+
+### 1. Clone the Repository
+
+```sh
+git clone https://github.com/yourusername/invoice-app.git
+cd invoice-app
+```
+
+### 2. Set Up Environment Variables
+
+Copy the `.env.example` file to `.env` and update the environment variables as needed:
+
+```sh
+cp .env.example .env
+```
+
+### 3. Build and Start the Containers
+
+Use the Makefile to build and start the Docker containers:
+
+```sh
+make up
+```
+
+### 4. Install PHP Dependencies
+
+Install the PHP dependencies using Composer:
+
+```sh
+make install
+```
+
+### 5. Run Database Migrations
+
+Run the database migrations to set up the database schema:
+
+```sh
+make migrate
+```
+
+### 6. Seed the Database
+
+(Optional) Seed the database with initial data:
+
+```sh
+make seed
+```
+
+### 7. Access the Application
+
+The application should now be running and accessible at [http://localhost:8080](http://localhost:8080).
+
+## Useful Commands
+
+Here are some useful commands you can use with the Makefile:
+
+- **Start the containers**: `make up`
+- **Stop the containers**: `make down`
+- **Restart the containers**: `make restart`
+- **Restart the app container**: `make restart-app`
+- **Restart the web container**: `make restart-web`
+- **Restart the db container**: `make restart-db`
+- **Run database migrations**: `make migrate`
+- **Seed the database**: `make seed`
+- **Install PHP dependencies**: `make install`
+- **Run tests**: `make test`
+- **View logs for all containers**: `make logs`
+- **View logs for the app container**: `make logs-app`
+- **View logs for the web container**: `make logs-web`
+- **View logs for the db container**: `make logs-db`
+- **Access the app container via bash**: `make bash`
+- **Access the MySQL shell**: `make db`
+- **Inspect the db container**: `make inspect-db`
+
+## Exiting the MySQL Shell
+
+To exit the MySQL shell, type `exit` or `quit` and press Enter:
+
+```sql
+mysql> exit;
+Bye
+```
+
+or
+
+```sql
+mysql> quit;
+Bye
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
@@ -64,3 +166,5 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+This project is licensed under the MIT License.
