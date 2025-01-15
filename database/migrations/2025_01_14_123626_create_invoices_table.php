@@ -13,15 +13,16 @@ return new class extends Migration
     {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies');
-            $table->foreignId('customer_id')->constrained('customers');
+            $table->string('invoiceId');
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
             $table->string('subject');
             $table->dateTime('issued_date');
             $table->dateTime('due_date');
-            $table->decimal('sub_total', 8, 2);
-            $table->decimal('tax', 8, 2);
-            $table->decimal('grand_total', 8, 2);
-            $table->enum('status', ['paid', 'unpaid']);
+            $table->decimal('sub_total', 15, 2);
+            $table->decimal('tax', 15, 2);
+            $table->decimal('grand_total', 15, 2);
+            $table->enum('status', ['draft', 'paid', 'unpaid', 'cancelled']);
             $table->timestamps();
         });
     }
