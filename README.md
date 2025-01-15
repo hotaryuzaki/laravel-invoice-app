@@ -16,6 +16,16 @@ This is a Laravel-based invoice application. The project is set up to run using 
 - Docker
 - Docker Compose
 
+### Installing Docker and Docker Compose
+
+#### Docker
+
+Follow the instructions on the [Docker website](https://docs.docker.com/get-docker/) to install Docker for your operating system.
+
+#### Docker Compose
+
+Docker Compose is included in Docker Desktop for Windows and macOS. For Linux, follow the instructions on the [Docker Compose website](https://docs.docker.com/compose/install/) to install Docker Compose.
+
 ## Getting Started
 
 Follow these steps to get the project up and running:
@@ -23,7 +33,7 @@ Follow these steps to get the project up and running:
 ### 1. Clone the Repository
 
 ```sh
-git clone https://github.com/yourusername/invoice-app.git
+git clone https://github.com/hotaryuzaki/laravel-invoice-app.git
 cd invoice-app
 ```
 
@@ -59,13 +69,25 @@ Run the database migrations to set up the database schema:
 make migrate
 ```
 
-### 6. Seed the Database
+### 6. Install API Routes
 
-(Optional) Seed the database with initial data:
+Run the `install:api` command to set up the API routes:
 
 ```sh
-make seed
+make install-api
 ```
+**NOTE:** If you encounter the permission error (`Permission denied` while writing to the log file), please run the below command and do install API again.
+
+please run the below command:
+```sh
+make cache-clear
+docker-compose exec app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+docker-compose exec app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+docker-compose exec app ls -l /var/www/storage
+docker-compose exec app ls -l /var/www/bootstrap/cache
+make restart
+```
+
 
 ### 7. Access the Application
 
@@ -82,7 +104,6 @@ Here are some useful commands you can use with the Makefile:
 - **Restart the web container**: `make restart-web`
 - **Restart the db container**: `make restart-db`
 - **Run database migrations**: `make migrate`
-- **Seed the database**: `make seed`
 - **Install PHP dependencies**: `make install`
 - **Run tests**: `make test`
 - **View logs for all containers**: `make logs`
@@ -92,79 +113,233 @@ Here are some useful commands you can use with the Makefile:
 - **Access the app container via bash**: `make bash`
 - **Access the MySQL shell**: `make db`
 - **Inspect the db container**: `make inspect-db`
+- **Install API routes**: `make install-api`
 
-## Exiting the MySQL Shell
+## API Endpoints
 
-To exit the MySQL shell, type `exit` or `quit` and press Enter:
+The following API endpoints are available:
 
-```sql
-mysql> exit;
-Bye
+- **Companies**
+  - `GET /api/companies`
+  - `POST /api/companies`
+  - `GET /api/companies/{company}`
+  - `PUT /api/companies/{company}`
+  - `DELETE /api/companies/{company}`
+
+- **Customers**
+  - `GET /api/customers`
+  - `POST /api/customers`
+  - `GET /api/customers/{customer}`
+  - `PUT /api/customers/{customer}`
+  - `DELETE /api/customers/{customer}`
+
+- **Items**
+  - `GET /api/items`
+  - `POST /api/items`
+  - `GET /api/items/{item}`
+  - `PUT /api/items/{item}`
+  - `DELETE /api/items/{item}`
+
+- **Invoices**
+  - `GET /api/invoices`
+  - `POST /api/invoices`
+  - `GET /api/invoices/{invoice}`
+  - `PUT /api/invoices/{invoice}`
+  - `DELETE /api/invoices/{invoice}`
+
+## Testing the API Endpoints
+
+Below are `curl` examples for testing CRUD operations for `Companies`, `Customers`, `Items`, and `Invoices`.
+
+---
+
+### **Companies CRUD**
+
+#### 1. **Create a Company** (POST)
+```bash
+curl -X POST "http://localhost:8080/api/companies" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "TechCorp Ltd.",
+  "address": "123 Silicon Valley, CA",
+  "email": "info@techcorp.com"
+}'
 ```
 
-or
-
-```sql
-mysql> quit;
-Bye
+#### 2. **Retrieve All Companies** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/companies?limit=10&offset=0" \
+-H "Accept: application/json"
 ```
 
-## About Laravel
+#### 3. **Retrieve a Specific Company** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/companies/1" \
+-H "Accept: application/json"
+```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+#### 4. **Update a Company** (PATCH)
+```bash
+curl -X PATCH "http://localhost:8080/api/companies/1" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "TechCorp International",
+  "address": "456 Tech Avenue, NY",
+  "email": "contact@techcorp.com"
+}'
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+#### 5. **Delete a Company** (DELETE)
+```bash
+curl -X DELETE "http://localhost:8080/api/companies/1" \
+-H "Accept: application/json"
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+### **Customers CRUD**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+#### 1. **Create a Customer** (POST)
+```bash
+curl -X POST "http://localhost:8080/api/customers" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "John Doe",
+  "address": "789 Elm Street, Seattle",
+  "email": "johndoe@gmail.com"
+}'
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+#### 2. **Retrieve All Customers** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/customers?limit=10&offset=0" \
+-H "Accept: application/json"
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+#### 3. **Retrieve a Specific Customer** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/customers/1" \
+-H "Accept: application/json"
+```
 
-## Laravel Sponsors
+#### 4. **Update a Customer** (PATCH)
+```bash
+curl -X PATCH "http://localhost:8080/api/customers/1" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "Jane Doe",
+  "address": "123 Pine Street, LA",
+  "email": "janedoe@gmail.com"
+}'
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+#### 5. **Delete a Customer** (DELETE)
+```bash
+curl -X DELETE "http://localhost:8080/api/customers/1" \
+-H "Accept: application/json"
+```
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### **Items CRUD**
 
-## Contributing
+#### 1. **Create an Item** (POST)
+```bash
+curl -X POST "http://localhost:8080/api/items" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "Laptop",
+  "description": "High-end gaming laptop",
+  "price": 1500
+}'
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### 2. **Retrieve All Items** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/items?limit=10&offset=0" \
+-H "Accept: application/json"
+```
 
-## Code of Conduct
+#### 3. **Retrieve a Specific Item** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/items/1" \
+-H "Accept: application/json"
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### 4. **Update an Item** (PATCH)
+```bash
+curl -X PATCH "http://localhost:8080/api/items/1" \
+-H "Content-Type: application/json" \
+-d '{
+  "name": "Gaming Laptop",
+  "description": "Updated high-end gaming laptop",
+  "price": 1600
+}'
+```
 
-## Security Vulnerabilities
+#### 5. **Delete an Item** (DELETE)
+```bash
+curl -X DELETE "http://localhost:8080/api/items/1" \
+-H "Accept: application/json"
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### **Invoices CRUD**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#### 1. **Create an Invoice** (POST)
+```bash
+curl -X POST "http://localhost:8080/api/invoices" \
+-H "Content-Type: application/json" \
+-d '{
+  "company_id": 1,
+  "customer_id": 2,
+  "subject": "Invoice for Service",
+  "issued_date": "2025-01-01T10:00:00",
+  "due_date": "2025-01-15T10:00:00",
+  "sub_total": 350,
+  "tax": 35,
+  "grand_total": 385,
+  "status": "unpaid"
+}'
+```
 
-This project is licensed under the MIT License.
+#### 2. **Retrieve All Invoices** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/invoices?limit=10&offset=0&invoiceid={invoiceid}&issueddate={issueddate}&subject={subject}&totalitems={totalitems}&customer={customer}&duedate={duedate}&status={status}" \
+-H "Accept: application/json"
+```
+
+#### 3. **Retrieve a Specific Invoice** (GET)
+```bash
+curl -X GET "http://localhost:8080/api/invoices/1" \
+-H "Accept: application/json"
+```
+
+#### 4. **Update an Invoice** (PATCH)
+```bash
+curl -X PATCH "http://localhost:8080/api/invoices/1" \
+-H "Content-Type: application/json" \
+-d '{
+  "company_id": 1,
+  "customer_id": 2,
+  "subject": "Updated Invoice for Service",
+  "issued_date": "2025-01-01T10:00:00",
+  "due_date": "2025-01-20T10:00:00",
+  "sub_total": 420,
+  "tax": 42,
+  "grand_total": 462,
+  "status": "paid"
+}'
+```
+
+#### 5. **Delete an Invoice** (DELETE)
+```bash
+curl -X DELETE "http://localhost:8080/api/invoices/1" \
+-H "Accept: application/json"
+```
+
+---
+
+### Notes:
+- Adjust query parameters (e.g., `limit`, `offset`, `name`) as needed for testing.

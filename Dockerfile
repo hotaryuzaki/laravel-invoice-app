@@ -5,7 +5,11 @@ RUN apt-get update && apt-get install -y \
   git \
   unzip \
   libzip-dev \
-  zip
+  zip \
+  tzdata
+
+# Set the timezone to Jakarta
+RUN ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime && echo "Asia/Jakarta" > /etc/timezone
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql zip

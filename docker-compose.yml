@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: app
     working_dir: /var/www
+    environment:
+      - TZ=Asia/Jakarta
     volumes:
       - ./:/var/www
     networks:
@@ -17,6 +19,8 @@ services:
     image: nginx:alpine
     container_name: web
     working_dir: /var/www
+    environment:
+      - TZ=Asia/Jakarta
     volumes:
       - ./:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
@@ -33,6 +37,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE}
+      TZ: Asia/Jakarta
     volumes:
       - db_data:/var/lib/mysql
     ports:

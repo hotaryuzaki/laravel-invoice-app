@@ -27,6 +27,7 @@ help:
 	@echo "  db                Access the MySQL shell"
 	@echo "  inspect-db        Inspect the db container"
 	@echo "  cache-clear       Clear the application cache"
+	@echo "  install-api       Run php artisan install:api in the app container"
 
 .PHONY: up
 up:
@@ -108,3 +109,7 @@ inspect-db:
 .PHONY: cache-clear
 cache-clear:
 	$(DOCKER_COMPOSE) exec app php artisan cache:clear
+
+.PHONY: install-api
+install-api:
+	$(DOCKER_COMPOSE) exec app php artisan install:api
