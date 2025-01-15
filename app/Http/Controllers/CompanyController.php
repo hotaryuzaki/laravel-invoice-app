@@ -40,6 +40,7 @@ class CompanyController extends Controller
                 'message' => 'Company created successfully',
                 'data' => $company
             ], 201);
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -59,11 +60,13 @@ class CompanyController extends Controller
                 'message' => 'Company retrieved successfully',
                 'data' => $company
             ], 200);
-        } catch (ValidationException $e) {
+
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->errors()
-            ], 400);
+                'message' => 'An error occurred while retrieving the company',
+                'error' => $e->getMessage(),
+            ], 404);
         }
     }
 
@@ -77,14 +80,24 @@ class CompanyController extends Controller
                 'email' => 'required|email|unique:companies,email,' . $id,
             ]);
 
-            $company = Company::findOrFail($id);
-            $company->update($validated);
+            try {
+                $company = Company::findOrFail($id);
+                $company->update($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Company updated successfully',
-                'data' => $company
-            ], 200);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Company updated successfully',
+                    'data' => $company
+                ], 200);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'An error occurred while updating the company',
+                    'error' => $e->getMessage(),
+                ], 404);
+            }
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -96,12 +109,21 @@ class CompanyController extends Controller
     // DELETE /api/companies/{id} (destroy)
     public function destroy($id)
     {
-        $company = Company::findOrFail($id);
-        $company->delete();
+        try {
+            $company = Company::findOrFail($id);
+            $company->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Company deleted successfully'
-        ], 204);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Company deleted successfully'
+            ], 204);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while deleting the company',
+                'error' => $e->getMessage(),
+            ], 404);
+        }
     }
 }

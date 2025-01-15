@@ -40,6 +40,7 @@ class CustomerController extends Controller
                 'message' => 'Customer created successfully',
                 'data' => $customer
             ], 201);
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -59,11 +60,13 @@ class CustomerController extends Controller
                 'message' => 'Customer retrieved successfully',
                 'data' => $customer
             ], 200);
-        } catch (ValidationException $e) {
+
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->errors()
-            ], 400);
+                'message' => 'An error occurred while retrieving the customer',
+                'error' => $e->getMessage(),
+            ], 404);
         }
     }
 
@@ -77,14 +80,24 @@ class CustomerController extends Controller
                 'email' => 'required|email|unique:customers,email,' . $id,
             ]);
 
-            $customer = Customer::findOrFail($id);
-            $customer->update($validated);
+            try {
+                $customer = Customer::findOrFail($id);
+                $customer->update($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Customer updated successfully',
-                'data' => $customer
-            ], 200);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Customer updated successfully',
+                    'data' => $customer
+                ], 200);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'An error occurred while updating the customer',
+                    'error' => $e->getMessage(),
+                ], 404);
+            }
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -96,12 +109,21 @@ class CustomerController extends Controller
     // Destroy
     public function destroy($id)
     {
-        $customer = Customer::findOrFail($id);
-        $customer->delete();
+        try {
+            $customer = Customer::findOrFail($id);
+            $customer->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Customer deleted successfully'
-        ], 204);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Customer deleted successfully'
+            ], 204);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while deleting the customer',
+                'error' => $e->getMessage(),
+            ], 404);
+        }
     }
 }

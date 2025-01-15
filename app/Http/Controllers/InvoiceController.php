@@ -77,12 +77,13 @@ class InvoiceController extends Controller
                 'data' => $invoices,
                 'total_datas' => $totalRecords
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while retrieving invoices',
                 'error' => $e->getMessage(),
-            ], 500);
+            ], 404);
         }
     }
 
@@ -128,17 +129,19 @@ class InvoiceController extends Controller
                 'message' => 'Invoice created successfully',
                 'data' => $invoice
             ], 201);
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => $e->errors()
             ], 400);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while creating the invoice',
                 'error' => $e->getMessage(),
-            ], 500);
+            ], 404);
         }
     }
 
@@ -186,12 +189,13 @@ class InvoiceController extends Controller
                 'message' => 'Invoice retrieved successfully',
                 'data' => $invoice
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while retrieving the invoice',
                 'error' => $e->getMessage(),
-            ], 500);
+            ], 404);
         }
     }
 
@@ -250,17 +254,19 @@ class InvoiceController extends Controller
                 'message' => 'Invoice updated successfully',
                 'data' => $invoice
             ], 200);
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => $e->errors()
             ], 400);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while updating the invoice',
                 'error' => $e->getMessage(),
-            ], 500);
+            ], 404);
         }
     }
 
@@ -274,13 +280,14 @@ class InvoiceController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Invoice deleted successfully'
-            ], 200);
+            ], 204);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while deleting the invoice',
                 'error' => $e->getMessage(),
-            ], 500);
+            ], 404);
         }
     }
 }

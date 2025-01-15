@@ -11,29 +11,38 @@ class ItemController extends Controller
     // List items with pagination
     public function index(Request $request)
     {
-        $limit = $request->query('limit', 10);
-        $offset = $request->query('offset', 0);
-        $search = $request->query('search', '');
+        try {
+            $limit = $request->query('limit', 10);
+            $offset = $request->query('offset', 0);
+            $search = $request->query('search', '');
 
-        $query = Item::query();
+            $query = Item::query();
 
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('type', 'like', '%' . $search . '%');
-            });
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('type', 'like', '%' . $search . '%');
+                });
+            }
+
+            $totalRecords = $query->count();
+
+            $items = $query->limit($limit)->offset($offset)->get();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Items retrieved successfully',
+                'data' => $items,
+                'total_datas' => $totalRecords
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while retrieving invoices',
+                'error' => $e->getMessage(),
+            ], 404);
         }
-
-        $totalRecords = $query->count();
-
-        $items = $query->limit($limit)->offset($offset)->get();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Items retrieved successfully',
-            'data' => $items,
-            'total_datas' => $totalRecords
-        ], 200);
     }
 
     // Store a new item
@@ -52,6 +61,7 @@ class ItemController extends Controller
                 'message' => 'Item created successfully',
                 'data' => $item
             ], 201);
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -71,12 +81,13 @@ class ItemController extends Controller
                 'message' => 'Item retrieved successfully',
                 'data' => $item
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while retrieving the item',
                 'error' => $e->getMessage(),
-            ], 400);
+            ], 404);
         }
     }
 
@@ -84,16 +95,24 @@ class ItemController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $item = Item::findOrFail($id);
-
             $validated = $request->validate([
                 'name' => 'required|string|min:3',
                 'type' => 'required|in:service,hardware',
             ]);
 
-            $item->update($validated);
+            try {
+                $item = Item::findOrFail($id);
+                $item->update($validated);
+                return response()->json($item, 200);
 
-            return response()->json($item, 200);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'An error occurred while updating the item',
+                    'error' => $e->getMessage(),
+                ], 404);
+            }
+
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
@@ -105,9 +124,21 @@ class ItemController extends Controller
     // Delete an item
     public function destroy($id)
     {
-        $item = Item::findOrFail($id);
-        $item->delete();
+        try {
+            $item = Item::findOrFail($id);
+            $item->delete();
 
-        return response()->noContent();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Item deleted successfully'
+            ], 204);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while deleting the item',
+                'error' => $e->getMessage(),
+            ], 404);
+        }
     }   
 }
