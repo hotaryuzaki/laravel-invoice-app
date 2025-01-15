@@ -13,13 +13,26 @@ class ItemController extends Controller
     {
         $limit = $request->query('limit', 10);
         $offset = $request->query('offset', 0);
+        $search = $request->query('search', '');
 
-        $items = Item::limit($limit)->offset($offset)->get();
+        $query = Item::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('type', 'like', '%' . $search . '%');
+            });
+        }
+
+        $totalRecords = $query->count();
+
+        $items = $query->limit($limit)->offset($offset)->get();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Items retrieved successfully',
-            'data' => $items
+            'data' => $items,
+            'total_datas' => $totalRecords
         ], 200);
     }
 

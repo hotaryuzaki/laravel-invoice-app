@@ -28,6 +28,7 @@ help:
 	@echo "  inspect-db        Inspect the db container"
 	@echo "  cache-clear       Clear the application cache"
 	@echo "  install-api       Run php artisan install:api in the app container"
+	@echo "  routes            List all routes"
 
 .PHONY: up
 up:
@@ -113,3 +114,7 @@ cache-clear:
 .PHONY: install-api
 install-api:
 	$(DOCKER_COMPOSE) exec app php artisan install:api
+
+.PHONY: routes
+routes:
+	$(DOCKER_COMPOSE) exec app php artisan route:list

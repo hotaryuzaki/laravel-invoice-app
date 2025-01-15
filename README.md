@@ -117,10 +117,11 @@ Here are some useful commands you can use with the Makefile:
 - **Access the MySQL shell**: `make db`
 - **Inspect the db container**: `make inspect-db`
 - **Install API routes**: `make install-api`
+- **View all registered routes**: `make routes`
 
 ## API Endpoints
 
-The following API endpoints are available:
+The following API endpoints are available (the details can be found in tests below this section):
 
 - **Companies**
   - `GET /api/companies`
@@ -255,10 +256,11 @@ curl -X POST "http://localhost:8080/api/items" \
   "type": "hardware"
 }'
 ```
+**NOTE:** The `type` field can be either `hardware` or `software`.
 
 #### 2. **Retrieve All Items** (GET)
 ```bash
-curl -X GET "http://localhost:8080/api/items?limit=10&offset=0" \
+curl -X GET "http://localhost:8080/api/items?limit=10&offset=0&search=service" \
 -H "Accept: application/json"
 ```
 

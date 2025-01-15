@@ -72,9 +72,11 @@ class InvoiceController extends Controller
             });
 
             return response()->json([
-                'invoices' => $invoices,
+                'status' => 'success',
+                'message' => 'Items retrieved successfully',
+                'data' => $invoices,
                 'total_datas' => $totalRecords
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
