@@ -17,13 +17,11 @@ class InvoiceItem extends Model
         'amount',
     ];
 
-    // Relationship with Invoice
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
     }
 
-    // Relationship with Item
     public function item()
     {
         return $this->belongsTo(Item::class);

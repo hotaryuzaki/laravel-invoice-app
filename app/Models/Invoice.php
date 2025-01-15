@@ -21,21 +21,21 @@ class Invoice extends Model
         'sub_total',
         'tax',
         'grand_total',
-        'status'
+        'status',
     ];
 
     public function company()
     {
-        return $this->belongsTo(Company::class, 'company_id');
+        return $this->belongsTo(Company::class);
     }
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class, 'customer_id');
+        return $this->belongsTo(Customer::class);
     }
 
-    public function items()
+    public function invoiceItems()
     {
-        return $this->hasMany(InvoiceItem::class, 'invoice_id');
+        return $this->hasMany(InvoiceItem::class);
     }
 }

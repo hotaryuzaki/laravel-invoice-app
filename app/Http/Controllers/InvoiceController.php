@@ -9,128 +9,135 @@ use App\Models\Company;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
+use App\Http\Requests\InvoiceRequest;
 
 class InvoiceController extends Controller
 {
     // Get invoices with optional filters, pagination, and joins
     public function index(Request $request)
     {
-        $query = Invoice::with('company', 'customer', 'invoiceItems.item')
+        try {
+            $query = Invoice::with('company', 'customer', 'invoiceItems.item')
             ->select('invoices.*')
             ->join('companies', 'invoices.company_id', '=', 'companies.id')
             ->join('customers', 'invoices.customer_id', '=', 'customers.id')
             ->leftJoin('invoice_items', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->leftJoin('items', 'invoice_items.item_id', '=', 'items.id');
+            ->leftJoin('items', 'invoice_items.item_id', '=', 'items.id')
+            ->groupBy('invoices.id');
 
-        if ($request->has('invoiceid')) {
-            $query->where('invoiceId', 'like', '%' . $request->invoiceid . '%');
-        }
-        if ($request->has('issueddate')) {
-            $query->whereDate('issued_date', $request->issueddate);
-        }
-        if ($request->has('subject')) {
-            $query->where('subject', 'like', '%' . $request->subject . '%');
-        }
-        if ($request->has('totalitems')) {
-            $query->havingRaw('COUNT(invoice_items.id) = ?', [$request->totalitems]);
-        }
-        if ($request->has('customer')) {
-            $query->where('customers.name', 'like', '%' . $request->customer . '%');
-        }
-        if ($request->has('duedate')) {
-            $query->whereDate('due_date', $request->duedate);
-        }
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+            if ($request->has('invoiceid') && $request->invoiceid !== '' && $request->invoiceid !== null) {
+                $query->where('invoiceId', 'like', '%' . $request->invoiceid . '%');
+            }
+            if ($request->has('issueddate') && $request->issueddate !== '' && $request->issueddate !== null) {
+                $query->whereDate('issued_date', $request->issueddate);
+            }
+            if ($request->has('subject') && $request->subject !== '' && $request->subject !== null) {
+                $query->where('subject', 'like', '%' . $request->subject . '%');
+            }
+            if ($request->has('totalitems') && $request->totalitems !== '' && $request->totalitems !== null && $request->totalitems !== 0) {
+                $query->havingRaw('COUNT(invoice_items.id) = ?', [$request->totalitems]);
+            }
+            if ($request->has('customer') && $request->customer !== '' && $request->customer !== null) {
+                $query->where('customers.name', 'like', '%' . $request->customer . '%');
+            }
+            if ($request->has('duedate') && $request->duedate !== '' && $request->duedate !== null) {
+                $query->whereDate('due_date', $request->duedate);
+            }
+            if ($request->has('status') && $request->status !== '' && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
 
-        $limit = $request->input('limit', 15);
-        $offset = $request->input('offset', 0);
+            // Get the total records before pagination
+            $invoices = $query->groupBy('invoices.id')->get();
+            $totalRecords = $invoices->count();
 
-        $invoices = $query->groupBy('invoices.id')
-            ->offset($offset)
+            $limit = $request->input('limit', 10);
+            $offset = $request->input('offset', 0);
+            $invoices = $query->offset($offset)
             ->limit($limit)
             ->get();
 
-        // Format the result for each invoice
-        $invoices = $invoices->map(function ($invoice) {
-            $invoice->company_name = $invoice->company->name;
-            $invoice->company_address = $invoice->company->address;
-            $invoice->company_email = $invoice->company->email;
-            $invoice->customer_name = $invoice->customer->name;
-            $invoice->customer_address = $invoice->customer->address;
-            $invoice->customer_email = $invoice->customer->email;
-            $invoice->items = $invoice->invoiceItems->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'item_id' => $item->item->id,
-                    'item_name' => $item->item->name,
-                    'item_type' => $item->item->type,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'amount' => $item->amount,
-                ];
+            // Format the result for each invoice
+            $invoices = $invoices->map(function ($invoice) {
+                $invoice->company_name = $invoice->company->name;
+                $invoice->company_address = $invoice->company->address;
+                $invoice->company_email = $invoice->company->email;
+                $invoice->customer_name = $invoice->customer->name;
+                $invoice->customer_address = $invoice->customer->address;
+                $invoice->customer_email = $invoice->customer->email;
+                $invoice->total_items = $invoice->invoiceItems->count();
+                unset($invoice->company, $invoice->customer); // to remove nested objects; company and customer
+                return $invoice;
             });
-            $invoice->total_items = $invoice->invoiceItems->count();
-            return $invoice;
-        });
 
-        return response()->json($invoices);
+            return response()->json([
+                'invoices' => $invoices,
+                'total_datas' => $totalRecords
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while retrieving invoices',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // Store a new invoice
-    public function store(Request $request)
+    public function store(InvoiceRequest $request)
     {
-        $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'customer_id' => 'required|exists:customers,id',
-            'subject' => 'required|string',
-            'items' => 'required|array',
-            'items.*.item_id' => 'required|exists:items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric',
-            'items.*.amount' => 'required|numeric',
-            'issued_date' => 'required|date',
-            'due_date' => 'required|date',
-            'sub_total' => 'required|numeric',
-            'tax' => 'required|numeric',
-            'grand_total' => 'required|numeric',
-        ]);
+        try {
+            $invoiceId = $this->generateInvoiceId();
 
-        $invoiceId = $this->generateInvoiceId();
+            // Default status logic
+            $status = $request->grand_total > 0 ? 'unpaid' : 'draft';
 
-        // Default status logic
-        $status = $request->grand_total > 0 ? 'unpaid' : 'draft';
-
-        // Create the invoice
-        $invoice = Invoice::create([
-            'invoiceId' => $invoiceId,
-            'company_id' => $request->company_id,
-            'customer_id' => $request->customer_id,
-            'subject' => $request->subject,
-            'issued_date' => $request->issued_date,
-            'due_date' => $request->due_date,
-            'sub_total' => $request->sub_total,
-            'tax' => $request->tax,
-            'grand_total' => $request->grand_total,
-            'status' => $status,
-        ]);
-
-        // Store invoice items
-        foreach ($request->items as $itemData) {
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'item_id' => $itemData['item_id'],
-                'quantity' => $itemData['quantity'],
-                'unit_price' => $itemData['unit_price'],
-                'amount' => $itemData['amount'],
+            // Create the invoice
+            $invoice = Invoice::create([
+                'invoiceId' => $invoiceId,
+                'company_id' => $request->company_id,
+                'customer_id' => $request->customer_id,
+                'subject' => $request->subject,
+                'issued_date' => $request->issued_date,
+                'due_date' => $request->due_date,
+                'sub_total' => $request->sub_total,
+                'tax' => $request->tax,
+                'grand_total' => $request->grand_total,
+                'status' => $status,
             ]);
+
+            // Store invoice items
+            foreach ($request->items as $itemData) {
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'item_id' => $itemData['item_id'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'amount' => $itemData['amount'],
+                ]);
+            }
+
+            // Load the invoice with associated data
+            $invoice->load('company', 'customer', 'invoiceItems.item');
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Invoice created successfully',
+                'data' => $invoice
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->errors()
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while creating the invoice',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Load the invoice with associated data
-        $invoice->load('company', 'customer', 'invoiceItems.item');
-
-        return response()->json($invoice, 201);
     }
 
     // Generate Invoice ID
@@ -149,78 +156,81 @@ class InvoiceController extends Controller
     // Show specific invoice
     public function show($id)
     {
-        $invoice = Invoice::with('company', 'customer', 'invoiceItems.item')
-            ->findOrFail($id);
+        try {
+            $invoice = Invoice::with('company', 'customer', 'invoiceItems.item')
+                ->findOrFail($id);
 
-        $invoice->company_name = $invoice->company->name;
-        $invoice->company_address = $invoice->company->address;
-        $invoice->company_email = $invoice->company->email;
-        $invoice->customer_name = $invoice->customer->name;
-        $invoice->customer_address = $invoice->customer->address;
-        $invoice->customer_email = $invoice->customer->email;
-        $invoice->items = $invoice->invoiceItems->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'item_id' => $item->item->id,
-                'item_name' => $item->item->name,
-                'item_type' => $item->item->type,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'amount' => $item->amount,
-            ];
-        });
-        $invoice->total_items = $invoice->invoiceItems->count();
+            $invoice->company_name = $invoice->company->name;
+            $invoice->company_address = $invoice->company->address;
+            $invoice->company_email = $invoice->company->email;
+            $invoice->customer_name = $invoice->customer->name;
+            $invoice->customer_address = $invoice->customer->address;
+            $invoice->customer_email = $invoice->customer->email;
+            $invoice->items = $invoice->invoiceItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'item_id' => $item->item->id,
+                    'item_name' => $item->item->name,
+                    'item_type' => $item->item->type,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'amount' => $item->amount,
+                ];
+            });
+            $invoice->total_items = $invoice->invoiceItems->count();
 
-        return response()->json($invoice);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Invoice retrieved successfully',
+                'data' => $invoice
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while retrieving the invoice',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // Update invoice
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'customer_id' => 'required|exists:customers,id',
-            'subject' => 'required|string',
-            'items' => 'required|array',
-            'items.*.item_id' => 'required|exists:items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric',
-            'items.*.amount' => 'required|numeric',
-            'issued_date' => 'required|date',
-            'due_date' => 'required|date',
-            'sub_total' => 'required|numeric',
-            'tax' => 'required|numeric',
-            'grand_total' => 'required|numeric',
-        ]);
+        try {
+            $request->validate([
+                'company_id' => 'required|exists:companies,id',
+                'customer_id' => 'required|exists:customers,id',
+                'subject' => 'required|string',
+                'items' => 'required|array',
+                'items.*.item_id' => 'required|exists:items,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.unit_price' => 'required|numeric',
+                'items.*.amount' => 'required|numeric',
+                'issued_date' => 'required|date',
+                'due_date' => 'required|date',
+                'sub_total' => 'required|numeric',
+                'tax' => 'required|numeric',
+                'grand_total' => 'required|numeric',
+            ]);
 
-        $invoice = Invoice::findOrFail($id);
+            $invoice = Invoice::findOrFail($id);
 
-        // Update the invoice
-        $invoice->update([
-            'company_id' => $request->company_id,
-            'customer_id' => $request->customer_id,
-            'subject' => $request->subject,
-            'issued_date' => $request->issued_date,
-            'due_date' => $request->due_date,
-            'sub_total' => $request->sub_total,
-            'tax' => $request->tax,
-            'grand_total' => $request->grand_total,
-            'status' => $request->grand_total > 0 ? 'unpaid' : 'draft',
-        ]);
+            // Update the invoice
+            $invoice->update([
+                'company_id' => $request->company_id,
+                'customer_id' => $request->customer_id,
+                'subject' => $request->subject,
+                'issued_date' => $request->issued_date,
+                'due_date' => $request->due_date,
+                'sub_total' => $request->sub_total,
+                'tax' => $request->tax,
+                'grand_total' => $request->grand_total,
+                'status' => $request->status ?? $invoice->status,
+            ]);
 
-        // Update invoice items
-        foreach ($request->items as $itemData) {
-            $invoiceItem = InvoiceItem::where('invoice_id', $invoice->id)
-                ->where('item_id', $itemData['item_id'])
-                ->first();
-
-            if ($invoiceItem) {
-                $invoiceItem->update([
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'amount' => $itemData['amount'],
-                ]);
-            } else {
+            // Clear existing invoice items and add updated ones
+            $invoice->invoiceItems()->delete();
+            foreach ($request->items as $itemData) {
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
                     'item_id' => $itemData['item_id'],
@@ -229,18 +239,46 @@ class InvoiceController extends Controller
                     'amount' => $itemData['amount'],
                 ]);
             }
+
+            // Load the invoice with associated data
+            $invoice->load('company', 'customer', 'invoiceItems.item');
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Invoice updated successfully',
+                'data' => $invoice
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->errors()
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while updating the invoice',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Reload invoice with related data
-        $invoice->load('company', 'customer', 'invoiceItems.item');
-
-        return response()->json($invoice);
     }
 
     // Delete invoice
     public function destroy($id)
     {
-        Invoice::destroy($id);
-        return response()->json(null, 204);
+        try {
+            $invoice = Invoice::findOrFail($id);
+            $invoice->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Invoice deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while deleting the invoice',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

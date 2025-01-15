@@ -28,6 +28,9 @@ Docker Compose is included in Docker Desktop for Windows and macOS. For Linux, f
 
 ## Getting Started
 
+#### Invoice App Database Schema (ERD)
+![erd](https://github.com/user-attachments/assets/4c1a37f3-257f-457f-8bde-2aa66c7ffc23)
+
 Follow these steps to get the project up and running:
 
 ### 1. Clone the Repository
@@ -249,8 +252,7 @@ curl -X POST "http://localhost:8080/api/items" \
 -H "Content-Type: application/json" \
 -d '{
   "name": "Laptop",
-  "description": "High-end gaming laptop",
-  "price": 1500
+  "type": "hardware"
 }'
 ```
 
@@ -292,15 +294,28 @@ curl -X DELETE "http://localhost:8080/api/items/1" \
 curl -X POST "http://localhost:8080/api/invoices" \
 -H "Content-Type: application/json" \
 -d '{
-  "company_id": 1,
-  "customer_id": 2,
-  "subject": "Invoice for Service",
+  "company_id": 2,
+  "customer_id": 1,
+  "subject": "Pembelian Barang",
+  "items": [
+          {
+            "item_id": 1,
+            "quantity": 2,
+            "unit_price": 10000,
+            "amount": 20000
+          }, 
+          {
+            "item_id": 2,
+            "quantity": 3,
+            "unit_price": 5000,
+            "amount": 15000
+          }
+  ],
   "issued_date": "2025-01-01T10:00:00",
   "due_date": "2025-01-15T10:00:00",
-  "sub_total": 350,
-  "tax": 35,
-  "grand_total": 385,
-  "status": "unpaid"
+  "sub_total": 35000,
+  "tax": 3500,
+  "grand_total": 38500
 }'
 ```
 
@@ -321,15 +336,28 @@ curl -X GET "http://localhost:8080/api/invoices/1" \
 curl -X PATCH "http://localhost:8080/api/invoices/1" \
 -H "Content-Type: application/json" \
 -d '{
-  "company_id": 1,
-  "customer_id": 2,
-  "subject": "Updated Invoice for Service",
+  "company_id": 2,
+  "customer_id": 1,
+  "subject": "Pembelian Barang",
+  "items": [
+          {
+            "item_id": 1,
+            "quantity": 2,
+            "unit_price": 10000,
+            "amount": 20000
+          }, 
+          {
+            "item_id": 2,
+            "quantity": 3,
+            "unit_price": 5000,
+            "amount": 15000
+          }
+  ],
   "issued_date": "2025-01-01T10:00:00",
-  "due_date": "2025-01-20T10:00:00",
-  "sub_total": 420,
-  "tax": 42,
-  "grand_total": 462,
-  "status": "paid"
+  "due_date": "2025-01-15T10:00:00",
+  "sub_total": 35000,
+  "tax": 3500,
+  "grand_total": 38500
 }'
 ```
 
